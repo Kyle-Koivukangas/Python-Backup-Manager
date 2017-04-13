@@ -139,6 +139,7 @@ class window(QMainWindow):
         self.setWindowTitle('Buttons')    
         self.show()
         print(self.__dict__)
+        #testing
 
     def show_restore_page(self):
         """The page that lets the user restore a saved backup"""
@@ -199,8 +200,6 @@ class RestorePage(QWidget):
         self.top = 300
         self.width = 300
         self.height = 150
-        self.initUI()
-
         self.initUI()
 
     def initUI(self):

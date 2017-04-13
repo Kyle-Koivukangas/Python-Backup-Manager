@@ -8,6 +8,7 @@ import sys
 import shutil
 import os
 import time
+from distutils.dir_util import copy_tree
 from datetime import datetime
 from configparser import SafeConfigParser
 
@@ -19,9 +20,8 @@ class Main:
     config = SafeConfigParser()
 
     def __init__(self):
-
-        self._folder_to_backup = "C:\\Users\\Kyle\\Google Drive\\Programming\\_Programming\\Python3\\Backup Manager\\test_folder_to_backup"
-        self._backup_destination = "C:\\Users\\Kyle\\Google Drive\\Programming\\_Programming\\Python3\\Backup Manager\\test_backup_destination"
+        self._folder_to_backup = "C:\\Users\\Kyle\\Google Drive\\Programming\\Python3\\Backup Manager\\test_folder_to_backup"
+        self._backup_destination = "C:\\Users\\Kyle\\Google Drive\\Programming\\Python3\\Backup Manager\\test_backup_destination"
         self._backup_interval = 7
 
     @property #getter & setter decorators
@@ -61,11 +61,22 @@ class Main:
             # Not strictly necessary if daemonic mode is enabled but should be done if possible
             scheduler.shutdown()
 
-    def backup_folder(self):
+    def backup_folder(self, affix=""):
         """copy the contents of _folder_to_backup to a new folder in the _backup_destination with the current date appended to the end of the folder name"""
-        shutil.copytree(self._folder_to_backup, f"{self._backup_destination}\\backup - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        shutil.copytree(self._folder_to_backup, f"{self._backup_destination}\\backup - {datetime.now().strftime('%Y-%m-%d %H %M %S')}{affix}")
 
         print("Folder backup complete..")
+    
+    def restore(self, backup_to_restore=None):
+        """backs up the current _folder_to_backup with an added affix to let you know its a pre-restore back up and not a scheduled backup 
+        before replacing it's contents with a previous backup; the location of the previous backup to replace it with should be specified in args"""
+        self.backup_folder(affix="-restore backup")
+        shutil.rmtree(self._folder_to_backup)
+        os.makedirs(self._folder_to_backup)
+        try:
+            copy_tree(backup_to_restore, self._folder_to_backup)
+        except:
+            print("invalid restore folder location, please specify which backup to restore")
 
     def check_config(self):
         "Checks for the existence of a config.ini file and reads the settings, if none exists it will create one and fill with current/default settings for Main"
@@ -82,7 +93,7 @@ class Main:
         "reads config.ini and gets the settings values then sets the values of its instance to those"
         Main.config.read('config.ini')
         self._folder_to_backup = Main.config.get('main', '_folder_to_backup')
-        self._folder_to_backup = Main.config.get('main', '_backup_destination')
+        self._backup_destination = Main.config.get('main', '_backup_destination')
         self._backup_interval = int(Main.config.get('main', '_backup_interval'))
 
         print("Config file read from: %s" % os.getcwd())
@@ -107,6 +118,7 @@ class Main:
 
         print("scheduler installed")
 
+
 if __name__ == "__main__":
     os.chdir(os.path.dirname(sys.argv[0])) # change working directory to location of script
     main = Main()
@@ -114,8 +126,10 @@ if __name__ == "__main__":
     main.check_config()
     print(main.backup_interval)
     #main.backup_folder()
-    main.install_startup_script()
-    print(os.path.expanduser("~\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"))
+    #main.install_startup_script()
+
+    main.restore("{}\\backup - test restore".format(main.backup_destination))
+    #main.restore()
 
     """ the following is the code to replace all the debugging code above.
     These commands are meant to be run when this script is run at startup(not when called upon from the GUI), they will check for the existence of config.ini \
